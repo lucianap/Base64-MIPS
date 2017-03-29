@@ -154,11 +154,33 @@ char* encode(char* input, int input_len)
 
 
 
+void helpMessage() {
+
+	char buffer[512];
+	snprintf(buffer, sizeof buffer, "%s", 
+   			"Usage: \n",
+   			"\ttp0 -h \n",
+   			"\ttp0 -V \n",
+   			"\ttp0 [options] \n",
+   			"\tOptions: \n",
+   			"\t\t-V, --version Print version and quit.\n",
+   			"\t\t-h, --help Print this information.\n",
+   			"\t\t-i, --input Location of the input file.\n",
+   			"\t\t-o, --output Location of the output file.\n",
+   			"\t\t-a, --action Program action: encode (default) or decode.\n",
+			"\tExamples:\n",
+			"\t\ttp0 -a encode -i ~/input -o ~/output\n",
+			"\t\ttp0 -a decode\n"
+		);
+	printf("%s\r\n", buffer);
+}
+
 
 
 void main( int argc, const char* argv[] )
 {
     checkEndian();
+
 
     //char* palabra = "abbcc";
     //get6bitsFrom(palabra, 12, 5);
