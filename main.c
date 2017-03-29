@@ -176,6 +176,10 @@ void helpMessage() {
 	printf("%s\r\n", buffer);
 }
 
+void version() {
+	printf("%s", "tp0 version 1.0\n");
+}
+
 
 
 void main( int argc, const char* argv[] )
@@ -183,15 +187,17 @@ void main( int argc, const char* argv[] )
     //checkEndian();
 
     if(argc > 1) {
-	    if(argv[1][1] == 'h') {
+	    if(argv[1][1] == 'h' || strcmp(argv[1],"--help") == 0 ) {
 		helpMessage();
-	    } else if (argv[1][1] == 'V') {
-	    	printf("%s", "tp0 version 1.0");
+	    } else if (argv[1][1] == 'V' || strcmp(argv[1],"--version") == 0) {
+	    	version();
             }	
     } 
 
     //char* palabra = "abbcc";
     //get6bitsFrom(palabra, 12, 5);
+
+
 
     //Leer de archivo o de standar input
     char *record = "Man is distinguished, not only by his reason, but";
