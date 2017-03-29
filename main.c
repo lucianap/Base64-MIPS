@@ -129,7 +129,7 @@ char* encode(char* input, int input_len)
     counterOutput = 0;
     int code = 0;
     int i;
-    printf("heloooo %d \n", input_len);
+
     for(i = 0; i <= (input_len*8 - 2); i+=6) {
         code = get6bitsFrom(input, i, input_len);
         output[counterOutput] = encoding_table[code];
