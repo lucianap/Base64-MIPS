@@ -34,7 +34,6 @@ void checkEndian(void)
     else if(un.c[0]==2 && un.c[1]==1)
     {
         printf("little_endian.\n");
-
         isLittleEndian = 1;
     }
 
@@ -58,7 +57,6 @@ unsigned char get6bitsFrom(char* src, int from, int length)
     unsigned char result = 0x0;
 
     if((bitsDer < 6) && ((from + bitsDer) < length*8)) {
-
         bitsIzq = (6-bitsDer);
         maskDer = ((1 << bitsDer) - 1) << (0);
         maskIzq = ~((1 << (8 -bitsIzq)) - 1);
@@ -66,13 +64,11 @@ unsigned char get6bitsFrom(char* src, int from, int length)
         unsigned char first = tmp1 & maskDer;
         unsigned char second = tmp2 & maskIzq;
         result = (first << (6 - bitsDer)) | (second >> (8 - bitsIzq));
-
     } else if ((from + 6) <= (length*8)) {
         bitsDer = 6;
         startDer = (from%8);
         maskDer = ((1 << 6) - 1) << (8 - startDer - 6);
         result = (maskDer & tmp1) >> (8 - 6 - startDer);
-
     } else if ((from + 6) > length*8) {
         //complete with 0
         unsigned char mask = 0x3;
@@ -136,7 +132,6 @@ char* encode(char* input, int input_len)
         counterOutput++;
     }
 
-
     //now calculate padding if necessary
     if((input_len % 3) != 0) {
         int restBytes = (input_len) % 3;
@@ -153,12 +148,94 @@ char* encode(char* input, int input_len)
     return output;
 }
 
+char decodeCharFromTable(char input) {
+    int i;
+    int len = sizeof(encoding_table) / sizeof(char);
+    for (i = 0; i < len; i++) {
+        if(encoding_table[i] == input) {
+            return i;
+        }
+    }
+    //si no encuentra en la tabla tira exception
+}
+
+//Entran 4 chars encodeados y salen 3 desencodeados.
+char* decode3chars(char* chars) {
+    *output = malloc(sizeof(char) * 3);
+    char char1 = decodeCharFromTable(chars[0]);
+    char char2 = decodeCharFromTable(chars[1]);
+    char char3 = decodeCharFromTable(chars[2]);
+    if (char3 == '=') {
+        char3 = 0x0;
+    }
+    char char4 = decodeCharFromTable(chars[3]);
+    if(char4 == '=') {
+        char4 = 0x0;
+    }
+
+    unsigned char mask1 = (0x1 << 6) - 1; //innecesario
+    unsigned char mask2 = (0x3 << 4);
+
+    unsigned char temp1 = char1;
+    unsigned char temp2 =char2 & mask2;
+
+    temp1 = temp1 << 2;
+    temp2 = temp2 >> 4;
+
+    output[0] = temp1 | temp2;
+
+
+    unsigned char mask3 = 0x13;
+    unsigned char mask4 = 0x13 << 2;
+
+    temp1 = (char2 & mask3) << 2;
+    temp2 = (char3 & mask4) >> 2;
+
+    output[1] = temp1 |temp2;
+
+    unsigned char mask5 = 0x3;
+    unsigned char mask6 = (0x1 << 6) - 1;
+
+    temp1 = (char3 & mask5) << 4;
+    temp2 = char4;
+
+    output[3] = temp1 | temp2;
+
+    return output;
+
+}
+
+char* decode(char* input, int input_len) {
+    int i;
+
+    if (input_length % 4 != 0) return NULL;
+
+    if(input_len % 3 != 0){
+        //TIRAR EXCEPTION, NO RESPETA STANDARD DE BASE64
+    }
+
+    *output_length = input_length / 4 * 3;
+    if (data[input_length - 1] == '=') (*output_length)--;
+    if (data[input_length - 2] == '=') (*output_length)--;
+
+    unsigned char *decoded_data = malloc(*output_length);
+    if (decoded_data == NULL) return NULL;
+
+    for(i = 0; i < input_len; i+=3){
+            char* decodedChars = decode3chars(&(input+i));
+            decoded_data[i] = decodedChars[0];
+            decoded_data[i+1] = decodedChars[1];
+            decoded_data[i+2] = decodedChars[2];
+    }
+
+    return decoded_data;
+}
 
 
 void helpMessage() {
 
 	char buffer[512];
-	snprintf(buffer, sizeof buffer, "%s", 
+	snprintf(buffer, sizeof buffer, "%s",
    			"\tUsage: \n"
    			"\ttp0 -h \n"
    			"\ttp0 -V \n"
@@ -191,8 +268,8 @@ void main( int argc, const char* argv[] )
 		helpMessage();
 	    } else if (argv[1][1] == 'V' || strcmp(argv[1],"--version") == 0) {
 	    	version();
-            }	
-    } 
+            }
+    }
 
     //char* palabra = "abbcc";
     //get6bitsFrom(palabra, 12, 5);
