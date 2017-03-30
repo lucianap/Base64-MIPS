@@ -49,7 +49,6 @@ unsigned char get6bitsFrom(char* src, int from, int length)
 
     int bitsDer = 8 - (from % 8);
     int startDer = from % 8;
-    int startIzq = 0;
     int bitsIzq = 0;
 
     unsigned char maskDer = 0x0;
@@ -121,7 +120,7 @@ char* encode(char* input, int input_len)
     //length of the coded string
     char* output = malloc( 4 * ((input_len + 2) / 3) );
 
-    int counterInput,counterOutput;
+    int counterOutput;
     counterOutput = 0;
     int code = 0;
     int i;
@@ -161,7 +160,7 @@ char decodeCharFromTable(char input) {
 
 //Entran 4 chars encodeados y salen 3 desencodeados.
 char* decode3chars(char* chars) {
-    *output = malloc(sizeof(char) * 3);
+    char* output = malloc(sizeof(char) * 3);
     char char1 = decodeCharFromTable(chars[0]);
     char char2 = decodeCharFromTable(chars[1]);
     char char3 = decodeCharFromTable(chars[2]);
@@ -173,7 +172,6 @@ char* decode3chars(char* chars) {
         char4 = 0x0;
     }
 
-    unsigned char mask1 = (0x1 << 6) - 1; //innecesario
     unsigned char mask2 = (0x3 << 4);
 
     unsigned char temp1 = char1;
@@ -194,7 +192,6 @@ char* decode3chars(char* chars) {
     output[1] = temp1 |temp2;
 
     unsigned char mask5 = 0x3;
-    unsigned char mask6 = (0x1 << 6) - 1;
 
     temp1 = (char3 & mask5) << 4;
     temp2 = char4;
@@ -205,24 +202,24 @@ char* decode3chars(char* chars) {
 
 }
 
-char* decode(char* input, int input_len) {
+char* decode(char* input, int input_lenght) {
     int i;
 
-    if (input_length % 4 != 0) return NULL;
+    if (input_lenght % 4 != 0) return NULL;
 
-    if(input_len % 3 != 0){
+    if(input_lenght % 3 != 0){
         //TIRAR EXCEPTION, NO RESPETA STANDARD DE BASE64
     }
 
-    *output_length = input_length / 4 * 3;
-    if (data[input_length - 1] == '=') (*output_length)--;
-    if (data[input_length - 2] == '=') (*output_length)--;
+    char* output_length = input_lenght / 4 * 3;
+    if (input[input_lenght - 1] == '=') (*output_length)--;
+    if (input[input_lenght - 2] == '=') (*output_length)--;
 
     unsigned char *decoded_data = malloc(*output_length);
     if (decoded_data == NULL) return NULL;
 
-    for(i = 0; i < input_len; i+=3){
-            char* decodedChars = decode3chars(&(input+i));
+    for(i = 0; i < input_lenght; i+=3){
+            char* decodedChars = decode3chars(input+i);
             decoded_data[i] = decodedChars[0];
             decoded_data[i+1] = decodedChars[1];
             decoded_data[i+2] = decodedChars[2];
@@ -263,18 +260,17 @@ void main( int argc, const char* argv[] )
 {
     //checkEndian();
 
+    char* action = "encode";
+    char* inputFormat = "stdInput";
+    char* outputFormat = "stdOutput";
+
     if(argc > 1) {
 	    if(argv[1][1] == 'h' || strcmp(argv[1],"--help") == 0 ) {
 		helpMessage();
 	    } else if (argv[1][1] == 'V' || strcmp(argv[1],"--version") == 0) {
-	    	version();
-            }
+            version();
+        }
     }
-
-    //char* palabra = "abbcc";
-    //get6bitsFrom(palabra, 12, 5);
-
-
 
     //Leer de archivo o de standar input
     char *record = "Man is distinguished, not only by his reason, but";
@@ -283,6 +279,10 @@ void main( int argc, const char* argv[] )
     printf("recordlen: %d", recordLen);
 
     printf("\ntrying encoding: %s\n", encode(record, recordLen));
+
+
+
+
 
 
 }
