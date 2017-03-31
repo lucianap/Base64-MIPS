@@ -180,24 +180,18 @@ char* decode3chars(char* chars) {
 
     temp1 = temp1 << 2;
     temp2 = temp2 >> 4;
-
     output[0] = temp1 | temp2;
 
     unsigned char mask3 = 0xF;
     unsigned char mask4 = 0xF << 2;
-
     temp1 = (char2 & mask3) << 4;
     temp2 = (char3 & mask4) >> 2;
-
     output[1] = temp1 |temp2;
 
     unsigned char mask5 = 0x3;
-
     temp1 = (char3 & mask5) << 6;
     temp2 = char4;
-
     output[2] = temp1 | temp2;
-
     output[3] = '\0';
 
     return output;
@@ -221,11 +215,7 @@ char* decode(char* input, int input_lenght) {
     int outputCounter = 0;
 
     for(i = 0; i < input_lenght; i+=4){
-
         unsigned char* in = input + i;
-
-        printf("tssssss ---> %s\n", in);
-
         char* decodedChars = decode3chars(in);
         decoded_data[outputCounter] = decodedChars[0];
         outputCounter++;
@@ -239,7 +229,7 @@ char* decode(char* input, int input_lenght) {
 }
 
 
-void helpMessage() {
+void help_message() {
 
 	char buffer[512];
 	snprintf(buffer, sizeof buffer, "%s",
@@ -276,7 +266,7 @@ void main( int argc, const char* argv[] )
 
     if(argc > 1) {
 	    if(argv[1][1] == 'h' || strcmp(argv[1],"--help") == 0 ) {
-		helpMessage();
+		help_message();
 	    } else if (argv[1][1] == 'V' || strcmp(argv[1],"--version") == 0) {
             version();
         }
@@ -291,7 +281,7 @@ void main( int argc, const char* argv[] )
     char* encoded = encode(record, recordLen);
     printf("\ntrying encoding: %s\n\n\n\n", encoded);
 
-    char* cadena = "TWFuIGlzIGRp";
+    char* cadena = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
     //char* chars = decode3chars(cadena);
     printf("fdsdfsdfsdfsdfsdfdsfsdfsdf");
 
