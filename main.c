@@ -141,8 +141,10 @@ char* encode(char* input, int input_len)
             counterOutput++;
             output[counterOutput] = '=';
         }
-
     }
+
+    counterOutput++;
+    output[counterOutput] = '\n';
 
     return output;
 }
@@ -160,7 +162,7 @@ char decodeCharFromTable(char input) {
 
 //Entran 4 chars encodeados y salen 3 desencodeados.
 char* decode3chars(char* chars) {
-    char* output = malloc(sizeof(char) * 3);
+    char* output = malloc(sizeof(char) * 4);
     char char1 = decodeCharFromTable(chars[0]);
     char char2 = decodeCharFromTable(chars[1]);
     char char3 = decodeCharFromTable(chars[2]);
@@ -172,57 +174,65 @@ char* decode3chars(char* chars) {
         char4 = 0x0;
     }
 
-    unsigned char mask2 = (0x3 << 4);
-
+    unsigned char mask1 = (0x3 << 4);
     unsigned char temp1 = char1;
-    unsigned char temp2 =char2 & mask2;
+    unsigned char temp2 = char2 & mask1;
 
     temp1 = temp1 << 2;
     temp2 = temp2 >> 4;
 
     output[0] = temp1 | temp2;
 
+    unsigned char mask3 = 0xF;
+    unsigned char mask4 = 0xF << 2;
 
-    unsigned char mask3 = 0x13;
-    unsigned char mask4 = 0x13 << 2;
-
-    temp1 = (char2 & mask3) << 2;
+    temp1 = (char2 & mask3) << 4;
     temp2 = (char3 & mask4) >> 2;
 
     output[1] = temp1 |temp2;
 
     unsigned char mask5 = 0x3;
 
-    temp1 = (char3 & mask5) << 4;
+    temp1 = (char3 & mask5) << 6;
     temp2 = char4;
 
-    output[3] = temp1 | temp2;
+    output[2] = temp1 | temp2;
+
+    output[3] = '\0';
 
     return output;
 
 }
 
 char* decode(char* input, int input_lenght) {
+
     int i;
-
     if (input_lenght % 4 != 0) return NULL;
-
-    if(input_lenght % 3 != 0){
+    if(input_lenght % 4 != 0){
         //TIRAR EXCEPTION, NO RESPETA STANDARD DE BASE64
     }
 
-    char* output_length = input_lenght / 4 * 3;
-    if (input[input_lenght - 1] == '=') (*output_length)--;
-    if (input[input_lenght - 2] == '=') (*output_length)--;
+    int output_length = input_lenght / 4 * 3;
+    if (input[input_lenght - 1] == '=') (output_length)--;
+    if (input[input_lenght - 2] == '=') (output_length)--;
 
-    unsigned char *decoded_data = malloc(*output_length);
+    unsigned char *decoded_data = malloc(output_length);
     if (decoded_data == NULL) return NULL;
+    int outputCounter = 0;
 
-    for(i = 0; i < input_lenght; i+=3){
-            char* decodedChars = decode3chars(input+i);
-            decoded_data[i] = decodedChars[0];
-            decoded_data[i+1] = decodedChars[1];
-            decoded_data[i+2] = decodedChars[2];
+    for(i = 0; i < input_lenght; i+=4){
+
+        unsigned char* in = input + i;
+
+        printf("tssssss ---> %s\n", in);
+
+        char* decodedChars = decode3chars(in);
+        decoded_data[outputCounter] = decodedChars[0];
+        outputCounter++;
+        decoded_data[outputCounter] = decodedChars[1];
+        outputCounter++;
+        decoded_data[outputCounter] = decodedChars[2];
+        outputCounter++;
     }
 
     return decoded_data;
@@ -278,11 +288,16 @@ void main( int argc, const char* argv[] )
 
     printf("recordlen: %d", recordLen);
 
-    printf("\ntrying encoding: %s\n", encode(record, recordLen));
+    char* encoded = encode(record, recordLen);
+    printf("\ntrying encoding: %s\n\n\n\n", encoded);
+
+    char* cadena = "TWFuIGlzIGRp";
+    //char* chars = decode3chars(cadena);
+    printf("fdsdfsdfsdfsdfsdfdsfsdfsdf");
+
+    printf("trying decoding: %s\n\n\n", decode(cadena, strlen(cadena)));
 
 
-
-
-
+    return 0;
 
 }
