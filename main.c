@@ -143,8 +143,8 @@ char* encode(char* input, int input_len)
         }
     }
 
-    counterOutput++;
-    output[counterOutput] = '\n';
+    //counterOutput++;
+    //output[counterOutput] = '\n';
 
     return output;
 }
@@ -256,7 +256,7 @@ void version() {
 
 
 
-void main( int argc, const char* argv[] )
+int main2( int argc, const char* argv[] )
 {
     //checkEndian();
 
