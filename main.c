@@ -5,7 +5,6 @@
 #include <string.h>
 
 
-int isLittleEndian = 1;
 
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -16,28 +15,7 @@ static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                 '4', '5', '6', '7', '8', '9', '+', '/'};
 
-void checkEndian(void)
-{
-    union
-    {
-        short   inum;
-        char c[sizeof(short)];
-    } un;
 
-    un.inum=0x0102;
-
-    if(un.c[0]==1 && un.c[1]==2)
-    {
-        printf("big_endian.\n");
-        isLittleEndian = 0;
-    }
-    else if(un.c[0]==2 && un.c[1]==1)
-    {
-        printf("little_endian.\n");
-        isLittleEndian = 1;
-    }
-
-}
 
 // Devuelve 6 bits contiguos a la posición from.
 // En caso de que los bits pedidos no alcancen, se completan los 6 bits con ceros.
@@ -59,16 +37,24 @@ unsigned char get6bitsFrom(char* src, int from, int length)
         bitsIzq = (6-bitsDer);
         maskDer = ((1 << bitsDer) - 1) << (0);
         maskIzq = ~((1 << (8 -bitsIzq)) - 1);
-
         unsigned char first = tmp1 & maskDer;
         unsigned char second = tmp2 & maskIzq;
         result = (first << (6 - bitsDer)) | (second >> (8 - bitsIzq));
+
     } else if ((from + 6) <= (length*8)) {
         bitsDer = 6;
         startDer = (from%8);
         maskDer = ((1 << 6) - 1) << (8 - startDer - 6);
         result = (maskDer & tmp1) >> (8 - 6 - startDer);
-    } else if ((from + 6) > length*8) {
+
+    } else if (((from + 6) > length*8) && ((from == length*8 - 4)))  {
+
+        //complete with 0
+        unsigned char mask = 0xF;
+        result = (mask & tmp1) << 2;
+
+
+    } else if (((from + 6) > length*8) && ((from == length*8 - 2))) {
         //complete with 0
         unsigned char mask = 0x3;
         result = (mask & tmp1) << 4;
@@ -77,7 +63,6 @@ unsigned char get6bitsFrom(char* src, int from, int length)
     return result;
 
 }
-
 
 int getBit(char *src, int n)
 {
@@ -120,16 +105,18 @@ char* encode(char* input, int input_len)
     //length of the coded string
     char* output = malloc( 4 * ((input_len + 2) / 3) );
 
+
     int counterOutput;
     counterOutput = 0;
     int code = 0;
     int i;
 
-    for(i = 0; i <= (input_len*8 - 2); i+=6) {
+    for(i = 0; i <= (input_len*8 -2); i+=6) {
         code = get6bitsFrom(input, i, input_len);
         output[counterOutput] = encoding_table[code];
         counterOutput++;
     }
+
 
     //now calculate padding if necessary
     if((input_len % 3) != 0) {
@@ -145,6 +132,8 @@ char* encode(char* input, int input_len)
 
     //counterOutput++;
     //output[counterOutput] = '\n';
+
+
 
     return output;
 }
@@ -162,16 +151,17 @@ char decodeCharFromTable(char input) {
 
 //Entran 4 chars encodeados y salen 3 desencodeados.
 char* decode3chars(char* chars) {
-    char* output = malloc(sizeof(char) * 4);
+    char* output = malloc(sizeof(char) * 3);
     char char1 = decodeCharFromTable(chars[0]);
     char char2 = decodeCharFromTable(chars[1]);
-    char char3 = decodeCharFromTable(chars[2]);
-    if (char3 == '=') {
-        char3 = 0x0;
+    char char3 = 0x0;
+    char char4 = 0x0;
+
+    if (chars[2] != '=') {
+        char3 = decodeCharFromTable(chars[2]);
     }
-    char char4 = decodeCharFromTable(chars[3]);
-    if(char4 == '=') {
-        char4 = 0x0;
+    if(chars[3] != '=') {
+        char4 = decodeCharFromTable(chars[3]);
     }
 
     unsigned char mask1 = (0x3 << 4);
@@ -186,17 +176,18 @@ char* decode3chars(char* chars) {
     unsigned char mask4 = 0xF << 2;
     temp1 = (char2 & mask3) << 4;
     temp2 = (char3 & mask4) >> 2;
-    output[1] = temp1 |temp2;
+    output[1] = temp1 | temp2;
 
     unsigned char mask5 = 0x3;
     temp1 = (char3 & mask5) << 6;
     temp2 = char4;
     output[2] = temp1 | temp2;
-    output[3] = '\0';
+
 
     return output;
 
 }
+
 
 char* decode(char* input, int input_lenght) {
 
@@ -206,9 +197,11 @@ char* decode(char* input, int input_lenght) {
         //TIRAR EXCEPTION, NO RESPETA STANDARD DE BASE64
     }
 
-    int output_length = input_lenght / 4 * 3;
+    int output_length = input_lenght / 4 * 3 ;
+
     if (input[input_lenght - 1] == '=') (output_length)--;
     if (input[input_lenght - 2] == '=') (output_length)--;
+
 
     unsigned char *decoded_data = malloc(output_length);
     if (decoded_data == NULL) return NULL;
@@ -219,10 +212,15 @@ char* decode(char* input, int input_lenght) {
         char* decodedChars = decode3chars(in);
         decoded_data[outputCounter] = decodedChars[0];
         outputCounter++;
-        decoded_data[outputCounter] = decodedChars[1];
-        outputCounter++;
-        decoded_data[outputCounter] = decodedChars[2];
-        outputCounter++;
+
+        if(decodedChars[1] != 0x0) {
+            decoded_data[outputCounter] = decodedChars[1];
+            outputCounter++;
+        }
+        if(decodedChars[2] != 0x0) {
+            decoded_data[outputCounter] = decodedChars[2];
+            outputCounter++;
+        }
     }
 
     return decoded_data;
