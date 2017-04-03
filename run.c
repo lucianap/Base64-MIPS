@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "main.c"
+#include "lectura.c"
 
 void help_message() {
 
@@ -63,17 +64,12 @@ int main( int argc, const char* argv[] )
 			fprintf(stderr, "Ocurrio un error al abrir el archivo.\n");
 			return -1;
 		}
-		printf("Escaneo el archivo");
-		fscanf(fInput, "%s", input);
-		printf("Fin del scan. El resultado es %s", input);
-		printf("Cierro el archivo");
+		input = leer_linea_archivo(fInput);
 		fclose(fInput);
-		printf("Cerre el archivo");
 	} else {
 		printf("Ingrese la cadena: ");
-		gets(input);
+		input = leer_linea();
 	}
-	printf("El input obtenido es: %s", input);
 	
 	char* output;
 	if(doEncode) {
@@ -87,8 +83,11 @@ int main( int argc, const char* argv[] )
 		fputs(output, fOutput);
 		fclose(fOutput);
 	} else {
-		printf(output);
+		printf("%s", output);
 	}
+	
+	// La lectura por stdInput esta hecha con memoria dinamica. La tengo que liberar.
+	free(input);
  
 	return 0;
 
