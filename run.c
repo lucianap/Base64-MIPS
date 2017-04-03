@@ -67,7 +67,6 @@ int main( int argc, const char* argv[] )
 		input = leer_linea_archivo(fInput);
 		fclose(fInput);
 	} else {
-		printf("Ingrese la cadena: ");
 		input = leer_linea();
 	}
 	
@@ -77,13 +76,15 @@ int main( int argc, const char* argv[] )
 	} else {
 		output = decode(input, strlen(input));
 	}
-	
-	if(!stdOutput) {
-		FILE* fOutput = fopen(outputFile, "w");
-		fputs(output, fOutput);
-		fclose(fOutput);
-	} else {
-		printf("%s", output);
+
+	if(output != NULL) {
+		if(!stdOutput) {
+			FILE* fOutput = fopen(outputFile, "w");
+			fputs(output, fOutput);
+			fclose(fOutput);
+		} else {
+			printf("%s\n", output);
+		}
 	}
 	
 	// La lectura por stdInput esta hecha con memoria dinamica. La tengo que liberar.

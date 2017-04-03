@@ -4,8 +4,6 @@
 #include <math.h>
 #include <string.h>
 
-
-
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
                                 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
@@ -104,8 +102,6 @@ char* encode(char* input, int input_len)
 {
     //length of the coded string
     char* output = malloc( 4 * ((input_len + 2) / 3) );
-
-
     int counterOutput;
     counterOutput = 0;
     int code = 0;
@@ -130,11 +126,6 @@ char* encode(char* input, int input_len)
         }
     }
 
-    //counterOutput++;
-    //output[counterOutput] = '\n';
-
-
-
     return output;
 }
 
@@ -146,7 +137,9 @@ char decodeCharFromTable(char input) {
             return i;
         }
     }
-    //si no encuentra en la tabla tira exception
+
+    fprintf(stderr, "ERROR - String %c not encoded with Base64 Standard.\n", input);
+    return -1;
 }
 
 //Entran 4 chars encodeados y salen 3 desencodeados.
@@ -162,6 +155,10 @@ char* decode3chars(char* chars) {
     }
     if(chars[3] != '=') {
         char4 = decodeCharFromTable(chars[3]);
+    }
+
+    if(char1 == -1 || char2 == -1 || char3 == -1 || char4 == -1){
+    	return NULL;
     }
 
     unsigned char mask1 = (0x3 << 4);
@@ -192,9 +189,10 @@ char* decode3chars(char* chars) {
 char* decode(char* input, int input_lenght) {
 
     int i;
-    if (input_lenght % 4 != 0) return NULL;
+  
     if(input_lenght % 4 != 0){
-        //TIRAR EXCEPTION, NO RESPETA STANDARD DE BASE64
+	fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.\n", input);
+        return NULL;
     }
 
     int output_length = input_lenght / 4 * 3 ;
@@ -210,6 +208,12 @@ char* decode(char* input, int input_lenght) {
     for(i = 0; i < input_lenght; i+=4){
         unsigned char* in = input + i;
         char* decodedChars = decode3chars(in);
+	
+	if(decodedChars == NULL) {
+	     fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.", input);
+             return NULL;	
+	}
+
         decoded_data[outputCounter] = decodedChars[0];
         outputCounter++;
 
