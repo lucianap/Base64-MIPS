@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
+#include "main.h"
 
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -62,40 +58,40 @@ unsigned char get6bitsFrom(char* src, int from, int length)
 
 }
 
-int getBit(char *src, int n)
-{
-    unsigned char tmp = *(src + n/8);
-    unsigned char mask = (0x1 << (8 - n%8 - 1));
-    int bit = 0;
-    bit =  (tmp & mask) > 0;
-    return bit;
-}
+// int getBit(char *src, int n)
+// {
+    // unsigned char tmp = *(src + n/8);
+    // unsigned char mask = (0x1 << (8 - n%8 - 1));
+    // int bit = 0;
+    // bit =  (tmp & mask) > 0;
+    // return bit;
+// }
 
 
-void printbits(unsigned char c)
-{
-    int i = 0;
-    for(i = 0; i< 8; i++) {
-        printf("%d", getBit(&c, i));
-    }
-    printf("\n");
-}
+// void printbits(unsigned char c)
+// {
+    // int i = 0;
+    // for(i = 0; i< 8; i++) {
+        // printf("%d", getBit(&c, i));
+    // }
+    // printf("\n");
+// }
 
 
-void setBit(char *src, int n, int bit)
-{
-    unsigned char * pTmp = src + n/8;
-    unsigned char mask = (0x1 << (8 - n%8 - 1));
+// void setBit(char *src, int n, int bit)
+// {
+    // unsigned char * pTmp = src + n/8;
+    // unsigned char mask = (0x1 << (8 - n%8 - 1));
 
-    if (bit)
-    {
-        *pTmp |= mask;
-    }
-    else
-    {
-        *pTmp &= ~mask;
-    }
-}
+    // if (bit)
+    // {
+        // *pTmp |= mask;
+    // }
+    // else
+    // {
+        // *pTmp &= ~mask;
+    // }
+// }
 
 
 char* encode(char* input, int input_len)

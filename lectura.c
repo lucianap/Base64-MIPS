@@ -1,10 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "lectura.h"
 #define TAMANIO_INICIAL_BUFFER 10
 #define FIN_LINEA '\n'
 #define FIN_STRING '\0'
-
 
 char* leer_linea(){
 	char c;	

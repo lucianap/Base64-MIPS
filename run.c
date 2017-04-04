@@ -1,7 +1,6 @@
-#include <stdio.h>
 #include <stdbool.h>
-#include "main.c"
-#include "lectura.c"
+#include "main.h"
+#include "lectura.h"
 
 void help_message() {
 
@@ -67,6 +66,7 @@ int main( int argc, const char* argv[] )
 		input = leer_linea_archivo(fInput);
 		fclose(fInput);
 	} else {
+		printf("Ingrese la cadena: ");
 		input = leer_linea();
 	}
 	
