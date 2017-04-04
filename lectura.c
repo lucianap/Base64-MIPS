@@ -22,7 +22,7 @@ char* leer_linea(){
 
 		buffer[i] = c;
 	}
-	buffer[i] = FIN_STRING; // es necesario cerrar el string
+	//buffer[i] = FIN_STRING; // es necesario cerrar el string
 	return buffer;
 }
 
@@ -45,6 +45,6 @@ char* leer_linea_archivo(FILE* file) {
 
 		buffer[i] = c;
 	}
-	buffer[i] = FIN_STRING; // es necesario cerrar el string
+	//buffer[i] = FIN_STRING; // es necesario cerrar el string
 	return buffer;
 }

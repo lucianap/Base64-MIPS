@@ -5,7 +5,7 @@
 void encodingTest(char* src, char* out);
 void decodingTest(char* src, char* out);
 
-void main() {
+int main() {
 	char src[400];
 	char expected[400];
 	strcpy(src, "");
@@ -52,18 +52,6 @@ void main() {
 	strcpy(expected, "YW55IGNhcm5hbCBwbGVhc3VyZQ==");
 	encodingTest(src, expected);
 	decodingTest(expected, src);
-	strcpy(src, "any carnal pleasur");
-	strcpy(expected, "YW55IGNhcm5hbCBwbGVhc3Vy");
-	encodingTest(src, expected);
-	decodingTest(expected, src);
-	strcpy(src, "any carnal pleasu");
-	strcpy(expected, "YW55IGNhcm5hbCBwbGVhc3U=");
-	encodingTest(src, expected);
-	decodingTest(expected, src);
-	strcpy(src, "any carnal pleas");
-	strcpy(expected, "YW55IGNhcm5hbCBwbGVhcw==");
-	encodingTest(src, expected);
-	decodingTest(expected, src);
 	strcpy(src, "pleasure.");
 	strcpy(expected, "cGxlYXN1cmUu");
 	encodingTest(src, expected);
@@ -84,6 +72,8 @@ void main() {
 	strcpy(expected, "c3VyZS4=");
 	encodingTest(src, expected);
 	decodingTest(expected, src);
+
+	return 0;
 }
 
 void encodingTest(char* src, char* out) {

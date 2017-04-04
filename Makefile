@@ -2,6 +2,7 @@ CC= gcc
 CFLAGS= -Wall -pedantic -std=c99 -g
 
 AUXILIARES= lectura.o main.o
+TEST= test
 EXEC= run
 
 #Configuracion Entrega
@@ -14,7 +15,7 @@ FORMATO=portrait 			#portrait o landscape (vertical u horizontal)
 COLUMNAS=1 	  			#paginas por hoja (en columnas)
 NUMEROS_LINEA=1   			#cada cuantas lineas se imprime el numero de linea
 
-ARCHIVO_ENTREGA=-$(ENTREGA)
+ARCHIVO_ENTREGA=$(ENTREGA)
 NOMBRE_ZIP= $(ARCHIVO_ENTREGA).zip
 NOMBRE_PDF= $(ARCHIVO_ENTREGA).pdf
 ENCABEZADO = "[66.20] Organizacion de Computadoras"
@@ -34,11 +35,14 @@ main.o: main.c main.h
 $(EXEC): $(AUXILIARES)
 	$(CC) $(CFLAGS) $(AUXILIARES) run.c -o $(EXEC)
 
-run: $(EXEC)
-	./$(EXEC)
+$(TEST): $(AUXILIARES)
+	$(CC) $(CFLAGS) $(AUXILIARES) tests.c -o $(TEST) 
 
 clean:
 	rm -f *.o $(EXEC)
+
+clean_test:
+	rm -f *.o $(TEST)
 
 
 #Seccion Entrega
