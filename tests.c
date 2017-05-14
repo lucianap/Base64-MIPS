@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "main.h"
+#include "base64.h"
 
 void encodingTest(char* src, char* out);
 void decodingTest(char* src, char* out);
@@ -77,8 +77,9 @@ int main() {
 }
 
 void encodingTest(char* src, char* out) {
-	char* encoded = encode(src, strlen(src));
-	int result = strcmp(out, encoded); 
+    size_t outputsize;
+	char* encoded = base64_encode(src, strlen(src), &outputsize);
+	int result = strcmp(out, encoded);
 	char* boolRes = "";
 	if(result == 0)
 		boolRes = "OK";
@@ -88,8 +89,9 @@ void encodingTest(char* src, char* out) {
 }
 
 void decodingTest(char* src, char* out) {
-	char* decoded = decode(src, strlen(src));
-	int result = strcmp(out, decoded); 
+    size_t outputsize;
+	char* decoded = base64_decode(src, strlen(src), &outputsize);
+	int result = strcmp(out, decoded);
 	char* boolRes = "";
 	if(result == 0)
 		boolRes = "OK";
