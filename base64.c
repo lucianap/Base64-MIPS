@@ -1,4 +1,6 @@
 #include "base64.h"
+#include <stdint.h>
+#include <stdio.h>
 
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -8,103 +10,85 @@ static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
                                 'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                 '4', '5', '6', '7', '8', '9', '+', '/'};
-static char *decoding_table = NULL;
-static int mod_table[] = {0, 2, 1};
+static char padding = '=';
 
+int base64_encode(int infd, int outfd) {
 
-char *base64_encode(const unsigned char *data,
-                    size_t input_length,
-                    size_t *output_length) {
+	unsigned char buffer_read[3];
+	unsigned char buffer_write[4];
 
-    *output_length = 4 * ((input_length + 2) / 3);
+	int bytes_read = 0;
+	do {
+		bytes_read = read(infd, buffer_read, sizeof(buffer_read));
 
-    char *encoded_data = malloc(*output_length);
-    if (encoded_data == NULL) return NULL;
+		//Si no leo ningún byte, salgo.
+		if (bytes_read == 0) break;
 
-    int i;
-    int j;
-    for (i = 0, j = 0; i < input_length;) {
+		//Si leo 1 byte, completo en 0 al resto.
+		if (bytes_read == 1) {
+			buffer_read[1] = 0;
+			buffer_read[2] = 0;
+		}
 
-        uint32_t octet_a = i < input_length ? (unsigned char)data[i++] : 0;
-        uint32_t octet_b = i < input_length ? (unsigned char)data[i++] : 0;
-        uint32_t octet_c = i < input_length ? (unsigned char)data[i++] : 0;
+		//Si leo 2 byte2, completo en 0 al faltante.
+		if (bytes_read == 2) {
+			buffer_read[2] = 0;
+		}
 
-        uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+		//Determino si leí un newline o un EOF, y reemplazo por 0.
+		if (buffer_read[bytes_read-1] == '\n' || buffer_read[bytes_read-1] == EOF)  {
+			buffer_read[--bytes_read] = 0;
+		}
 
-        encoded_data[j++] = encoding_table[(triple >> 3 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 2 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 1 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
-    }
+		//Transformo char a int32
+		uint32_t first_char = buffer_read[0];
+		uint32_t second_char = buffer_read[1];
+		uint32_t third_char = buffer_read[2];
 
-    int l;
-    for (l = 0; l < mod_table[input_length % 3]; l++)
-        encoded_data[*output_length - 1 - l] = '=';
+		//Shifteo para ubicar los chars en los bytes correspondientes a int32.
+		first_char = first_char << 0x10;
+		second_char = second_char << 0x08;
 
-    return encoded_data;
+		//Armo el int32 compuesto por los 3 bytes.
+		uint32_t sum = 0;
+		sum = sum + first_char;
+		sum = sum + second_char;
+		sum = sum + third_char;
+
+		//Calculo los 6 bits de cada caracter del encoding
+		int first_coded = sum >> 18;
+
+		int second_coded = sum >> 12;
+		second_coded = second_coded & 0x3F;
+
+		int third_coded = sum >> 6;
+		third_coded = third_coded & 0x3F;
+
+		int fourth_coded = sum & 0x3F;
+
+		//Completo el buffer de salida con los chars de Base64
+		buffer_write[0] = encoding_table[first_coded];
+		buffer_write[1] = encoding_table[second_coded];
+		buffer_write[2] = encoding_table[third_coded];
+		buffer_write[3] = encoding_table[fourth_coded];
+
+		//Reemplazo por padding correspondiente
+		if (bytes_read == 1) {
+			buffer_write[2] = padding;
+			buffer_write[3] = padding;
+		}
+
+		if (bytes_read == 2) {
+			buffer_write[3] = padding;
+		}
+
+		write(outfd, buffer_write, sizeof(buffer_write));
+
+	} while (bytes_read == sizeof(buffer_read));
+
+	return 0;
 }
 
-
-unsigned char *base64_decode(const char *data,
-                             size_t input_length,
-                             size_t *output_length) {
-
-
-    if (decoding_table == NULL) {
-        //build decoding table
-        decoding_table = malloc(256);
-        int i;
-        for (i = 0; i < 64; i++)
-            decoding_table[(unsigned char) encoding_table[i]] = i;
-
-    }
-
-    if (input_length % 4 != 0) {
-        fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.\n", data);
-        return NULL;
-
-    }
-
-    *output_length = input_length / 4 * 3;
-    if (data[input_length - 1] == '=') (*output_length)--;
-    if (data[input_length - 2] == '=') (*output_length)--;
-
-    unsigned char *decoded_data = malloc(*output_length);
-    if (decoded_data == NULL) return NULL;
-
-    int i;
-    int j;
-    for (i = 0, j = 0; i < input_length;) {
-
-        uint32_t sextet_a = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-        uint32_t sextet_b = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-        uint32_t sextet_c = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-        uint32_t sextet_d = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-
-        uint32_t triple = (sextet_a << 3 * 6)
-        + (sextet_b << 2 * 6)
-        + (sextet_c << 1 * 6)
-        + (sextet_d << 0 * 6);
-
-        if (j < *output_length) decoded_data[j++] = (triple >> 2 * 8) & 0xFF;
-        if (j < *output_length) decoded_data[j++] = (triple >> 1 * 8) & 0xFF;
-        if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
-    }
-
-    return decoded_data;
-}
-
-
-void build_decoding_table() {
-
-    decoding_table = malloc(256);
-
-    int i;
-    for (i = 0; i < 64; i++)
-        decoding_table[(unsigned char) encoding_table[i]] = i;
-}
-
-
-void base64_cleanup() {
-    free(decoding_table);
+int base64_decode(int infd, int outfd) {
+	return 0;
 }

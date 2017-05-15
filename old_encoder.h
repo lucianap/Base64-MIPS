@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef OLD_ENCODER_H
+#define OLD_ENCODER_H
 
 #include <stdio.h>
 #include <string.h>

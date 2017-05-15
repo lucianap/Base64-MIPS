@@ -1,227 +1,124 @@
-#include "main.h"
+#include <stdbool.h>
+#include <unistd.h>
+#include <stdio.h>
+#include "lectura.h"
+#include "base64.h"
 
-static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-                                'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-                                'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-                                'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                                'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                                'w', 'x', 'y', 'z', '0', '1', '2', '3',
-                                '4', '5', '6', '7', '8', '9', '+', '/'};
+void help_message() {
 
+	char buffer[512];
+	snprintf(buffer, sizeof buffer, "%s",
+   			"\tUsage: \n"
+   			"\ttp0 -h \n"
+   			"\ttp0 -V \n"
+   			"\ttp0 [options] \n"
+   			"\tOptions: \n"
+   			"\t\t-V, --version Print version and quit.\n"
+   			"\t\t-h, --help Print this information.\n"
+   			"\t\t-i, --input Location of the input file. If this parameter is not present, input is std input\n"
+   			"\t\t-o, --output Location of the output file. If this parameter is not present, output is std output\n"
+   			"\t\t-a, --action Program action: encode (default) or decode.\n"
+			"\tExamples:\n"
+			"\t\ttp0 -a encode -i ~/input -o ~/output\n"
+			"\t\ttp0 -a decode\n"
+		);
+	printf("%s\r\n", buffer);
+}
 
+void version() {
+	printf("%s", "tp0 version 1.0\n");
+}
 
-// Devuelve 6 bits contiguos a la posición from.
-// En caso de que los bits pedidos no alcancen, se completan los 6 bits con ceros.
-unsigned char get6bitsFrom(char* src, int from, int length)
+int main( int argc, const char* argv[] )
 {
-    //Me posiciono en el byte de inicio
-    unsigned char tmp1 = *(src + from/8);
-    unsigned char tmp2 = *(src + from/8 + 1);
+	bool doEncode = true;
+	bool stdInput = true;
+	const char* inputFile = NULL;
+	bool stdOutput = true;
+	const char* outputFile = NULL;
 
-    int bitsDer = 8 - (from % 8);
-    int startDer = from % 8;
-    int bitsIzq = 0;
-
-    unsigned char maskDer = 0x0;
-    unsigned char maskIzq = 0x0;
-    unsigned char result = 0x0;
-
-    if((bitsDer < 6) && ((from + bitsDer) < length*8)) {
-        bitsIzq = (6-bitsDer);
-        maskDer = ((1 << bitsDer) - 1) << (0);
-        maskIzq = ~((1 << (8 -bitsIzq)) - 1);
-        unsigned char first = tmp1 & maskDer;
-        unsigned char second = tmp2 & maskIzq;
-        result = (first << (6 - bitsDer)) | (second >> (8 - bitsIzq));
-
-    } else if ((from + 6) <= (length*8)) {
-        bitsDer = 6;
-        startDer = (from%8);
-        maskDer = ((1 << 6) - 1) << (8 - startDer - 6);
-        result = (maskDer & tmp1) >> (8 - 6 - startDer);
-
-    } else if (((from + 6) > length*8) && ((from == length*8 - 4)))  {
-
-        //complete with 0
-        unsigned char mask = 0xF;
-        result = (mask & tmp1) << 2;
-
-
-    } else if (((from + 6) > length*8) && ((from == length*8 - 2))) {
-        //complete with 0
-        unsigned char mask = 0x3;
-        result = (mask & tmp1) << 4;
+	if(argc > 1) {
+		for(int i = 1; i < argc; i++) {
+			if(argv[i][1] == 'h' || strcmp(argv[i],"--help") == 0 ) {
+				help_message();
+			} else if (argv[i][1] == 'V' || strcmp(argv[i],"--version") == 0) {
+				version();
+			} else if (strcmp(argv[i],"-a") == 0 || strcmp(argv[i],"--action") == 0) {
+				if(strcmp(argv[i + 1], "decode") == 0)
+					doEncode = false;
+			} else if (strcmp(argv[i],"-i") == 0 || strcmp(argv[i],"--input") == 0) {
+				inputFile = argv[i + 1];
+				stdInput = false;
+			} else if (strcmp(argv[i],"-o") == 0 || strcmp(argv[i],"--output") == 0) {
+				outputFile = argv[i + 1];
+				stdOutput = false;
+			}
+		}
+	    
     }
+	int fd_in = STDIN_FILENO;
+	int fd_out = STDOUT_FILENO;
 
-    return result;
+	FILE* fInput;
+	FILE* fOutput;
 
-}
+    //Leer de archivo o de standard input
+	if(!stdInput) {
+		fInput = fopen(inputFile, "r");
+		if(fInput == NULL) {
+			fprintf(stderr, "Ocurrio un error al abrir el archivo.\n");
+			return -1;
+		}
 
-// int getBit(char *src, int n)
-// {
-    // unsigned char tmp = *(src + n/8);
-    // unsigned char mask = (0x1 << (8 - n%8 - 1));
-    // int bit = 0;
-    // bit =  (tmp & mask) > 0;
-    // return bit;
-// }
+		fd_in = fileno(fInput);
 
-
-// void printbits(unsigned char c)
-// {
-    // int i = 0;
-    // for(i = 0; i< 8; i++) {
-        // printf("%d", getBit(&c, i));
-    // }
-    // printf("\n");
-// }
-
-
-// void setBit(char *src, int n, int bit)
-// {
-    // unsigned char * pTmp = src + n/8;
-    // unsigned char mask = (0x1 << (8 - n%8 - 1));
-
-    // if (bit)
-    // {
-        // *pTmp |= mask;
-    // }
-    // else
-    // {
-        // *pTmp &= ~mask;
-    // }
-// }
-
-
-char* encode(char* input, int input_len)
-{
-    //length of the coded string
-    char* output = malloc( 4 * ((input_len + 2) / 3) );
-    int counterOutput;
-    counterOutput = 0;
-    int code = 0;
-    int i;
-
-    for(i = 0; i <= (input_len*8 -2); i+=6) {
-        code = get6bitsFrom(input, i, input_len);
-        output[counterOutput] = encoding_table[code];
-        counterOutput++;
-    }
-
-
-    //now calculate padding if necessary
-    if((input_len % 3) != 0) {
-        int restBytes = (input_len) % 3;
-        if(restBytes == 2) {
-            output[counterOutput] = '=';
-        } else if (restBytes == 1) {
-            output[counterOutput] = '=';
-            counterOutput++;
-            output[counterOutput] = '=';
-        }
-    }
-
-    return output;
-}
-
-char decodeCharFromTable(char input) {
-    int i;
-    int len = sizeof(encoding_table) / sizeof(char);
-    for (i = 0; i < len; i++) {
-        if(encoding_table[i] == input) {
-            return i;
-        }
-    }
-
-    fprintf(stderr, "ERROR - String %c not encoded with Base64 Standard.\n", input);
-    return -1;
-}
-
-//Entran 4 chars encodeados y salen 3 desencodeados.
-char* decode3chars(char* chars) {
-    char* output = malloc(sizeof(char) * 3);
-    char char1 = decodeCharFromTable(chars[0]);
-    char char2 = decodeCharFromTable(chars[1]);
-    char char3 = 0x0;
-    char char4 = 0x0;
-
-    if (chars[2] != '=') {
-        char3 = decodeCharFromTable(chars[2]);
-    }
-    if(chars[3] != '=') {
-        char4 = decodeCharFromTable(chars[3]);
-    }
-
-    if(char1 == -1 || char2 == -1 || char3 == -1 || char4 == -1){
-    	return NULL;
-    }
-
-    unsigned char mask1 = (0x3 << 4);
-    unsigned char temp1 = char1;
-    unsigned char temp2 = char2 & mask1;
-
-    temp1 = temp1 << 2;
-    temp2 = temp2 >> 4;
-    output[0] = temp1 | temp2;
-
-    unsigned char mask3 = 0xF;
-    unsigned char mask4 = 0xF << 2;
-    temp1 = (char2 & mask3) << 4;
-    temp2 = (char3 & mask4) >> 2;
-    output[1] = temp1 | temp2;
-
-    unsigned char mask5 = 0x3;
-    temp1 = (char3 & mask5) << 6;
-    temp2 = char4;
-    output[2] = temp1 | temp2;
-
-
-    return output;
-
-}
-
-
-char* decode(char* input, int input_lenght) {
-
-    int i;
-  
-    if(input_lenght % 4 != 0){
-	fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.\n", input);
-        return NULL;
-    }
-
-    int output_length = input_lenght / 4 * 3 ;
-
-    if (input[input_lenght - 1] == '=') (output_length)--;
-    if (input[input_lenght - 2] == '=') (output_length)--;
-
-
-    unsigned char *decoded_data = malloc(output_length);
-    if (decoded_data == NULL) return NULL;
-    int outputCounter = 0;
-
-    for(i = 0; i < input_lenght; i+=4){
-        unsigned char* in = input + i;
-        char* decodedChars = decode3chars(in);
+//		input = leer_linea_archivo(fInput);
+//		fclose(fInput);
+	} else {
+		printf("Ingrese la cadena: \n");
+	}
 	
-	if(decodedChars == NULL) {
-	     fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.", input);
-             return NULL;	
+    //Leer de archivo o de standard input
+	if(!stdOutput) {
+		fOutput = fopen(outputFile, "w");
+
+//		fputs(output, fOutput);
+
+		fd_out = fileno(fOutput);
+
+//		fclose(fOutput);
 	}
 
-        decoded_data[outputCounter] = decodedChars[0];
-        outputCounter++;
+	char* output;
+	if(doEncode) {
+		output = base64_encode(fd_in, fd_out);
+	} else {
+		output = base64_decode(fd_in, fd_out);
+	}
 
-        if(decodedChars[1] != 0x0) {
-            decoded_data[outputCounter] = decodedChars[1];
-            outputCounter++;
-        }
-        if(decodedChars[2] != 0x0) {
-            decoded_data[outputCounter] = decodedChars[2];
-            outputCounter++;
-        }
-    }
+	if(!stdInput) {
+		fclose(fInput);
+	}
 
-    return decoded_data;
+	if(!stdOutput) {
+		fclose(fOutput);
+	} else {
+		printf("\n");
+	}
+
+//	if(output != NULL) {
+//		if(!stdOutput) {
+//			FILE* fOutput = fopen(outputFile, "w");
+//			fputs(output, fOutput);
+//			fclose(fOutput);
+//		} else {
+//			printf("%s\n", output);
+//		}
+//	}
+	
+	// La lectura por stdInput esta hecha con memoria dinamica. La tengo que liberar.
+//	free(input);
+ 
+	return 0;
+
 }
