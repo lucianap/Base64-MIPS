@@ -90,5 +90,76 @@ int base64_encode(int infd, int outfd) {
 }
 
 int base64_decode(int infd, int outfd) {
+	unsigned char buffer_read[4];
+	unsigned char buffer_write[3];
+
+	int bytes_read = 0;
+	do {
+		bytes_read = read(infd, buffer_read, sizeof(buffer_read));
+
+		if (bytes_read != 4) {
+			fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.\n", data);
+			return NULL; //Aca tengo que mandar el codigo de error
+		}
+		
+		int output_length = 3;
+		if (buffer_read[bytes_read - 1] == '=') output_length--;
+		if (buffer_read[bytes_read - 2] == '=') output_length--;
+		
+
+		//Transformo char a int32
+		
+		int i;
+		int len = sizeof(encoding_table) / sizeof(char);
+		uint32_t first_char = 0, second_char = 0, third_char = 0, fourth_char = 0;
+		for (i = 0; i < len; i++) {
+			if(encoding_table[i] == buffer_read[0]) {
+				first_char = i;
+			}
+		}
+		for (i = 0; i < len; i++) {
+			if(encoding_table[i] == buffer_read[1]) {
+				second_char = i;
+			}
+		}
+		for (i = 0; i < len; i++) {
+			if(encoding_table[i] == buffer_read[2]) {
+				third_char = i;
+			}
+		}
+		for (i = 0; i < len; i++) {
+			if(encoding_table[i] == buffer_read[3]) {
+				fourth_char = i;
+				break;
+			}
+		}
+		
+		first_char = first_char << 18;
+		second_char = second_char << 12;
+		third_char = third_char << 6;
+		
+		uint32_t sum = 0;
+		sum = sum + first_char;
+		sum = sum + second_char;
+		sum = sum + third_char;
+		sum = sum + fourth_char;
+		
+		char first_decoded = (sum >> 16) & 0xFF;
+		char second_decoded = (sum >> 8) & 0xFF;
+		char third_decoded = (sum >> 0) & 0xFF;
+		
+		buffer_write[0] = first_decoded;
+		if (output_length > 1)
+			buffer_write[1] = second_decoded;
+		if (output_length > 2)
+			buffer_write[2] = third_decoded;
+		
+		write(outfd, buffer_write, sizeof(buffer_write));
+		
+		
+		
+		
+	} while (output_length == 3);
+
 	return 0;
 }
