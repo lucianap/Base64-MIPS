@@ -84,7 +84,7 @@ and	t2, t0, 0x3F
 srl	t0, t0, 6
 and	t1, t0, 0x3F
 
-la	t5, enconding_table
+la	t5, encoding_table
 
 // Save first_coded
 addu	t1, t1, t5
