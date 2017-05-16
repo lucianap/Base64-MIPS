@@ -149,13 +149,13 @@ syscall
 
 end_encode:
 
-move	v0,zero
-move	sp,$fp
-lw	ra,88(sp)
-lw	$fp,84(sp)
-lw	gp,80(sp)
-addu	sp,sp,96
-j	ra
+move	v0, zero
+move	sp, $fp
+lw		ra, 88(sp)
+lw		$fp, 84(sp)
+lw		gp, 80(sp)
+addu	sp, sp, 96
+j		ra
 
 .end base64_encode_s
 
@@ -164,30 +164,31 @@ j	ra
 	.align 	2
 	
 base64_decode_s:
-	.frame		$fp, 52, ra 	# $fp: registro usado como frame pointer
+	.frame		$fp, 56, ra 	# $fp: registro usado como frame pointer
 	
 	.set	noreorder
 	.cpload	t9
 	.set 	reorder
 	
 	#Creo el stack frame
-	subu		sp, sp, 52		# 4 (SRA) + 9 (ABA)
+	subu		sp, sp, 56		# 4 (SRA) + 9 (ABA)
 	
-	.cprestore 	36
+	.cprestore	16
 	# salvado de callee-saved regs en SRA
-	sw			$fp, 40(sp)
-	sw			ra, 44(sp)
-	
+	sw			ra, 48(sp)
+	sw			$fp, 44(sp)
+	sw			gp, 40(sp)
+
 	# de aqui al fin de la funcion uso $fp en lugar de sp.
 	move		$fp, sp
 	
 	# Salvo los argumentos
-	sw 			a0, 0($fp)
-	sw 			a1, 4($fp)
+	sw 			a0, 56($fp)
+	sw 			a1, 60($fp)
 	
 	#Leo desde el file descriptor que me llega por parametro
 	li			v0, SYS_read		# ver dentro de <sys/syscall.h>.
-	lw			a0, 0($fp)			# a0: file descriptor (redundante)
+	lw			a0, 56($fp)			# a0: file descriptor (redundante)
 	la			a1, 8($fp)			# a1: data pointer.
 	lw			a2, 4				# a2: longitud, leo de a 4 bytes.
 	syscall
@@ -262,7 +263,7 @@ _end_for:
 	srl			t6, t6, 8		# t6 >> 8
 	sb			t6, 0(a1)
 	move		a2, t0			# Seteo la longitud a escribir
-	lb			a0, 4($fp)		# Recupero el parametro del file descriptor de salida
+	lb			a0, 60($fp)		# Recupero el parametro del file descriptor de salida
 	li			v0, SYS_write
 	syscall
 	
@@ -272,12 +273,11 @@ _end_decode:
 	# Volvemos al sistema operativo, devolviendo un código 
 	# de retorno nulo.
 	move		v0, zero
-	lw			ra,  44(sp)
-	lw			$fp, 40(sp)
-	addu		sp, sp, 52
+	lw			ra,  48(sp)
+	lw			$fp, 44(sp)
+	lw			gp, 40(sp)
+	addu		sp, sp, 56
 	j			ra
-		
-	.end	base64_decode_s
 	
 _error_decode:
 	li 			a0, 2 				# salida por stderr
@@ -300,6 +300,9 @@ _error_bad_encoding:
 	li 			v0, SYS_exit 		# exit con valor de salida en a0
 	syscall
 	b			_end_decode
+
+	.end	base64_decode_s
+
 
 	.rdata
 	.align 2
