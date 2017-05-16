@@ -12,7 +12,7 @@ static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 '4', '5', '6', '7', '8', '9', '+', '/'};
 static char padding = '=';
 
-int base64_encode(int infd, int outfd) {
+int base64_encode_c(int infd, int outfd) {
 
 	unsigned char buffer_read[3];
 	unsigned char buffer_write[4];
@@ -89,20 +89,20 @@ int base64_encode(int infd, int outfd) {
 	return 0;
 }
 
-int base64_decode(int infd, int outfd) {
+int base64_decode_c(int infd, int outfd) {
 	unsigned char buffer_read[4];
 	unsigned char buffer_write[3];
 
 	int bytes_read = 0;
+	int output_length;
 	do {
 		bytes_read = read(infd, buffer_read, sizeof(buffer_read));
 
 		if (bytes_read != 4) {
-			fprintf(stderr, "ERROR - String %s not encoded with Base64 Standard.\n", data);
-			return NULL; //Aca tengo que mandar el codigo de error
+			return 1; //Aca tengo que mandar el codigo de error
 		}
 		
-		int output_length = 3;
+		output_length = 3;
 		if (buffer_read[bytes_read - 1] == '=') output_length--;
 		if (buffer_read[bytes_read - 2] == '=') output_length--;
 		
@@ -154,10 +154,7 @@ int base64_decode(int infd, int outfd) {
 		if (output_length > 2)
 			buffer_write[2] = third_decoded;
 		
-		write(outfd, buffer_write, sizeof(buffer_write));
-		
-		
-		
+		write(outfd, buffer_write, output_length);
 		
 	} while (output_length == 3);
 

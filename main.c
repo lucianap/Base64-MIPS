@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "lectura.h"
 #include "base64.h"
 
 void help_message() {
@@ -38,7 +37,8 @@ int main( int argc, const char* argv[] )
 	const char* outputFile = NULL;
 
 	if(argc > 1) {
-		for(int i = 1; i < argc; i++) {
+		int i;
+		for(i = 1; i < argc; i++) {
 			if(argv[i][1] == 'h' || strcmp(argv[i],"--help") == 0 ) {
 				help_message();
 			} else if (argv[i][1] == 'V' || strcmp(argv[i],"--version") == 0) {
@@ -72,8 +72,6 @@ int main( int argc, const char* argv[] )
 
 		fd_in = fileno(fInput);
 
-//		input = leer_linea_archivo(fInput);
-//		fclose(fInput);
 	} else {
 		printf("Ingrese la cadena: \n");
 	}
@@ -82,18 +80,15 @@ int main( int argc, const char* argv[] )
 	if(!stdOutput) {
 		fOutput = fopen(outputFile, "w");
 
-//		fputs(output, fOutput);
-
 		fd_out = fileno(fOutput);
 
-//		fclose(fOutput);
 	}
 
 	char* output;
 	if(doEncode) {
-		output = base64_encode(fd_in, fd_out);
+		output = base64_encode_c(fd_in, fd_out);
 	} else {
-		output = base64_decode(fd_in, fd_out);
+		output = base64_decode_c(fd_in, fd_out);
 	}
 
 	if(!stdInput) {
@@ -106,19 +101,6 @@ int main( int argc, const char* argv[] )
 		printf("\n");
 	}
 
-//	if(output != NULL) {
-//		if(!stdOutput) {
-//			FILE* fOutput = fopen(outputFile, "w");
-//			fputs(output, fOutput);
-//			fclose(fOutput);
-//		} else {
-//			printf("%s\n", output);
-//		}
-//	}
-	
-	// La lectura por stdInput esta hecha con memoria dinamica. La tengo que liberar.
-//	free(input);
- 
 	return 0;
 
 }
