@@ -160,6 +160,7 @@ j	ra
 
 	.globl	base64_decode_s
 	.ent	base64_decode_s
+	.align 2
 	
 base64_decode_s:
 	.frame	$fp, 40, ra #Salvo el ra
@@ -171,9 +172,108 @@ base64_decode_s:
 	#Creo el stack frame
 	subu	sp, sp, 654573 # //TODO: ver cuanto ocupa el stack frame
 	
-	.crestore 24 #sw gp, 24(sp) //TODO: ver cuanto de offset le tengo que poner al sp
+	.crestore 24 # //TODO: ver cuanto de offset le tengo que poner al sp
+	# salvado de callee-saved regs en SRA	# //TODO: ver, de nuevo, los offsets de aca
+	sw	$fp, 28(sp)
+	sw	ra, 32(sp)
+	
+	# de aqui al fin de la funcion uso $fp en lugar de sp.
+	move	$fp, sp
+	
+	# Salvo los argumentos
+	sw 	a0, 40($fp)
+	sw 	a1, 44($fp)
 	
 	
+	li	v0, SYS_read	# ver dentro de <sys/syscall.h>.
+	lw	a0, 40($fp)		# a0: file descriptor (redundante)
+	la	a1, 8(fp)		# a1: data pointer.
+	lw	a2, 4			# a2: longitud, leo de a 4 bytes.
+	syscall
+	
+	bne	a3, zero, error # Chequeo si la syscall se ejecuto bien
+	
+	be	v0, zero, end_decode 		# Si no lei nada, termino
+	li	t0, 4						#t0 = 4
+	bne v0, t0, _error_bad_coding	#if (bytes_read != 4) no es Base64
+	
+	
+	li	t0, 3							# int output_length = 3
+	lb	t1, 3(a1)						#t2 = el cuarto byte de lo que lei
+	bne	t1, 0(padding), _desencodear
+	subu	t0, 1						#output_length -= 1
+	lb	t1, 2(a1)						#t2 = el tercer byte de lo que lei
+	bne	t1, 0(padding), _desencodear
+	subu	t0, 1						#output_length -= 1
+	
+_desencodear:
+	move	t2, zero 		#first_char = 0
+	move	t3, zero		#second_char = 0
+	move	t4, zero		#third_char = 0
+	move	t5, zero		#fourth_ char = 0
+	li		t6, 64		#int len_encoding_table = 64
+	
+	
+	# for (int i = 0; i < len_encoding_table; i++)
+	move	t7, zero
+_for_loop:
+	blt	t7, t6, _end_for
+	la	t8, encoding_table
+	addu	t7, t8				# t8 = direccion de encoding_table[i]
+	lb	t9, t8(encoding_table)	# t9 = encoding_table[i]
+_compare_first_char:
+	lb	t1, 0(a1)
+	bne	t9, t1, _compare_second_char # if (encoding_table[i] == read[0]) fisrt_char = i
+	lb	t2, t1
+_compare_second_char:
+	lb	t1, 1(a1)
+	bne	t9, t1, _compare_third_char # if (encoding_table[i] == read[1]) second_char = i
+	lb	t3, t1
+_compare_third_char:
+	lb	t1, 2(a1)
+	bne	t9, t1, _compare_third_char # if (encoding_table[i] == read[2]) third_char = i
+	lb	t4, t1
+_compare_fourth_char:
+	lb	t1, 3(a1)
+	bne	t9, t1, _end_comparison # if (encoding_table[i] == read[2]) third_char = i
+	lb	t5, t1
+_end_comparison:
+	addu	t7, t7, 1
+	j	_foor_loop	
+	
+_end_for:
+	sll		t2, t2, 18		# first_char << 18
+	sll		t3, t3, 12		# second_char << 12
+	sll		t4, t4, 6		# third_char << 6
+	
+	move	t6, zero		# Limpio t6 de lo anterior. t6 -> sum
+	or		t6, t6, t2		# sum = sum + first_char
+	or		t6, t6, t3		# sum = sum + second_char
+	or		t6, t6, t4		# sum = sum + third_char
+	or		t6, t6, t5		# sum = sum + fourth_char
+	
+	sb		t6, 2(a1)		# agrego al ls byte de a1 el ls byte de t6
+	srl		t6, t6, 8		# t6 >> 8
+	sb		t6, 1(a1)		# agrego al byte del medio de a1 el ls byte de t6
+	srl		t6, t6, 8		# t6 >> 8
+	sb		t6, 0(a1)		# agrego al ms byte de a1 el ls byte de t6
+	lb		t0, 0(a2)		# Seteo la longitud a escribir
+	lb		a0, 44($fp)		# Recupero el parametro del file descriptor de salida
+	li		v0, SYS_write
+	syscall
+	
+	bne	a3, zero, error # Chequeo si la syscall se ejecuto bien
+	
+
+	# Volvemos al sistema operativo, devolviendo un código 
+	# de retorno nulo.
+	#
+	move	v0, zero
+	lw		ra,  28(sp)
+	lw		$fp, 24(sp)
+	addu	sp, sp, 32
+	j		ra
+		
 	.end	base64_decode_s
 
 	.rdata
