@@ -242,7 +242,7 @@ _compare_fourth_char:
 	addu		t5, t7, zero
 _end_comparison:
 	addu		t7, t7, 1
-	b			_foor_loop	
+	b			_for_loop
 	
 _end_for:
 	sll			t2, t2, 18		# first_char << 18
