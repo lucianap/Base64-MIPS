@@ -43,7 +43,7 @@ bne 	a3, zero, error
 sw	v0, 32($fp)
 
 //Si no leo ningún byte, salgo.
-be 	v0, zero, end_encode
+beq 	v0, zero, end_encode
 
 //Si leo 1 byte, completo en 0 al resto.
 li 	t0, 1
@@ -60,7 +60,8 @@ sb	zero, 26($fp)
 next_step_2:
 li	t0, 10
 subu	t1, v0, 1
-addu	t1, t1, 24($fp)
+la	t3, 24($fp)
+addu	t1, t1, t3
 lb	t2, t1
 bne	t0, t2, next_step_3
 sb	zero, t1
@@ -133,7 +134,7 @@ bne 	a3, zero, error
 
 lw	t0, 32($fp)
 li	t1, 3
-be	t0, t1, do_while
+beq	t0, t1, do_while
 
 error:
 
@@ -193,7 +194,7 @@ base64_decode_s:
 	
 	bne	a3, zero, error # Chequeo si la syscall se ejecuto bien
 	
-	be	v0, zero, end_decode 		# Si no lei nada, termino
+	beq	v0, zero, end_decode 		# Si no lei nada, termino
 	li	t0, 4						#t0 = 4
 	bne v0, t0, _error_bad_coding	#if (bytes_read != 4) no es Base64
 	
