@@ -3,6 +3,7 @@
 
 .align 2
 .text
+.abicalls
 
 .globl base64_encode_s
 .ent base64_encode_s
@@ -48,12 +49,33 @@ syscall
 
 .end base64_encode_s
 
-.globl base64_decode_s
-.ent base64_decode_s
+	.globl	base64_decode
+	.ent	base64_decode
+	
+base64_decode:
+	.frame	$fp, 40, ra #Salvo el ra
+	
+	.set	noreorder
+	.cpload	t9
+	.set reorder
+	
+	#Creo el stack frame
+	subu	sp, sp, 654573 # //TODO: ver cuanto ocupa el stack frame
+	
+	.crestore 24 #sw gp, 24(sp) //TODO: ver cuanto de offset le tengo que poner al sp
+	
+	
+	.end	base64_decode
 
-base64_decode_s:
-
-
-.end base64_decode_s
-
-.rdata
+	.rdata
+	.align 2
+encoding_table: 
+	.byte 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 
+	79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 
+	100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 
+	112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 
+	50, 51, 52, 53, 54, 55, 56, 57, 43, 47
+	.size encoding_table, 64
+padding: 	
+	.byte	61
+	.size 	padding, 1
