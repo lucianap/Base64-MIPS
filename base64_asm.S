@@ -173,7 +173,7 @@ base64_decode_s:
 	#Creo el stack frame
 	subu		sp, sp, 52		# 4 (SRA) + 9 (ABA)
 	
-	.crestore 	36
+	.cprestore 	36
 	# salvado de callee-saved regs en SRA
 	sw			$fp, 40(sp)
 	sw			ra, 44(sp)
@@ -194,7 +194,7 @@ base64_decode_s:
 	
 	bne			a3, zero, _error_decode		# Chequeo si la syscall se ejecuto bien
 	
-	be			v0, zero, _end_decode 		# Si no lei nada, termino
+	beq			v0, zero, _end_decode 		# Si no lei nada, termino
 	li			t0, 4						# t0 = 4
 	bne 		v0, t0, _error_bad_encoding	# if (bytes_read != 4) no es Base64
 	
