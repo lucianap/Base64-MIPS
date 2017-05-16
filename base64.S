@@ -181,8 +181,8 @@ base64_decode_s:
 	
 	.cprestore	16
 	# salvado de callee-saved regs en SRA
-	sw			ra, 48(sp)
-	sw			$fp, 44(sp)
+	sw			$fp, 48(sp)
+	sw			ra, 44(sp)
 	sw			gp, 40(sp)
 
 	# de aqui al fin de la funcion uso $fp en lugar de sp.
@@ -194,7 +194,7 @@ base64_decode_s:
 	
 	#Leo desde el file descriptor que me llega por parametro
 	li			v0, SYS_read		# ver dentro de <sys/syscall.h>.
-	lw			a0, 0($fp)			# a0: file descriptor (redundante)
+	lw			a0, 56($fp)			# a0: file descriptor (redundante)
 	la			a1, 8($fp)			# a1: data pointer.
 	li			a2, 4				# a2: longitud, leo de a 4 bytes.
 	syscall
@@ -269,7 +269,7 @@ _end_for:
 	srl			t6, t6, 8		# t6 >> 8
 	sb			t6, 0(a1)
 	move		a2, t0			# Seteo la longitud a escribir
-	lb			a0, 4($fp)		# Recupero el parametro del file descriptor de salida
+	lw			a0, 56($fp)		# Recupero el parametro del file descriptor de salida
 	li			v0, SYS_write
 	syscall
 	
@@ -279,8 +279,8 @@ _end_decode:
 	# Volvemos al sistema operativo, devolviendo un código 
 	# de retorno nulo.
 	move		v0, zero
-	lw			ra,  48(sp)
-	lw			$fp, 44(sp)
+	lw			$fp, 48(sp)
+	lw			ra,  44(sp)
 	lw			gp, 40(sp)
 	addu		sp, sp, 56
 	j			ra
