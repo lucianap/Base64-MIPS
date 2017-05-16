@@ -119,7 +119,7 @@ next_step_4:
 li 	t0, 2
 bne 	v0, t0, write_encoded
 la	t6, padding
-lbu	t6, t6
+lbu	t6, 0(t6)
 sb	t6, 31($fp)
 
 // Escribo los bytes codificados
