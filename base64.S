@@ -87,21 +87,25 @@ and	t1, t0, 0x3F
 la	t5, encoding_table
 
 // Save first_coded
+first_coded:
 addu	t1, t1, t5
 lbu	t6, 0(t1)
 sb	t6, 28($fp)
 
 // Save second_coded
+second_coded:
 addu	t2, t2, t5
 lbu	t6, 0(t2)
 sb	t6, 29($fp)
 
 // Save third_coded
+third_coded:
 addu	t3, t3, t5
 lbu	t6, 0(t3)
 sb	t6, 30($fp)
 
 // Save fourth_coded
+fourth_coded:
 addu	t4, t4, t5
 lbu	t6, 0(t4)
 sb	t6, 31($fp)
@@ -135,6 +139,8 @@ bne 	a3, zero, error
 lw	t0, 32($fp)
 li	t1, 3
 beq	t0, t1, do_while
+
+b 	end_encode
 
 error:
 
@@ -188,9 +194,9 @@ base64_decode_s:
 	
 	#Leo desde el file descriptor que me llega por parametro
 	li			v0, SYS_read		# ver dentro de <sys/syscall.h>.
-	lw			a0, 56($fp)			# a0: file descriptor (redundante)
+	lw			a0, 0($fp)			# a0: file descriptor (redundante)
 	la			a1, 8($fp)			# a1: data pointer.
-	lw			a2, 4				# a2: longitud, leo de a 4 bytes.
+	li			a2, 4				# a2: longitud, leo de a 4 bytes.
 	syscall
 	
 	bne			a3, zero, _error_decode		# Chequeo si la syscall se ejecuto bien
@@ -204,11 +210,11 @@ base64_decode_s:
 	lbu			t1, 3(a1)						#t1 = el cuarto byte de lo que lei
 	la			t9, padding
 	bne			t1, t9, _desencodear
-	subu		t0, 1								
+	subu		t0, t0, 1								
 #output_length -= 1
 	lbu			t1, 2(a1)						#t1 = el tercer byte de lo que lei
 	bne			t1, t9, _desencodear
-	subu		t0, 1							#output_length -= 1
+	subu		t0, t0, 1							#output_length -= 1
 _desencodear:
 	move		t2, zero 		#first_char = 0
 	move		t3, zero		#second_char = 0
@@ -263,7 +269,7 @@ _end_for:
 	srl			t6, t6, 8		# t6 >> 8
 	sb			t6, 0(a1)
 	move		a2, t0			# Seteo la longitud a escribir
-	lb			a0, 60($fp)		# Recupero el parametro del file descriptor de salida
+	lb			a0, 4($fp)		# Recupero el parametro del file descriptor de salida
 	li			v0, SYS_write
 	syscall
 	
