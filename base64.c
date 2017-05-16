@@ -97,6 +97,10 @@ int base64_decode_c(int infd, int outfd) {
 	int output_length;
 	do {
 		bytes_read = read(infd, buffer_read, sizeof(buffer_read));
+		
+		if (bytes_read == 0) {
+			break;
+		}
 
 		if (bytes_read != 4) {
 			return 1; //Aca tengo que mandar el codigo de error
@@ -107,8 +111,6 @@ int base64_decode_c(int infd, int outfd) {
 		if (buffer_read[bytes_read - 2] == '=') output_length--;
 		
 
-		//Transformo char a int32
-		
 		int i;
 		int len = sizeof(encoding_table) / sizeof(char);
 		uint32_t first_char = 0, second_char = 0, third_char = 0, fourth_char = 0;
@@ -116,18 +118,12 @@ int base64_decode_c(int infd, int outfd) {
 			if(encoding_table[i] == buffer_read[0]) {
 				first_char = i;
 			}
-		}
-		for (i = 0; i < len; i++) {
 			if(encoding_table[i] == buffer_read[1]) {
 				second_char = i;
 			}
-		}
-		for (i = 0; i < len; i++) {
 			if(encoding_table[i] == buffer_read[2]) {
 				third_char = i;
 			}
-		}
-		for (i = 0; i < len; i++) {
 			if(encoding_table[i] == buffer_read[3]) {
 				fourth_char = i;
 				break;
