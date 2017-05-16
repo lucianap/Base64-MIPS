@@ -98,11 +98,11 @@ base64_decode_s:
 	subu	t0, 1						#output_length -= 1
 	
 _desencodear:
-	li	t2, 0 		#first_char = 0
-	li	t3, 0		#second_char = 0
-	li	t4, 0		#third_char = 0
-	li	t5, 0		#fourth_ char = 0
-	li	t6, 64		#int len_encoding_table = 64
+	move	t2, zero 		#first_char = 0
+	move	t3, zero		#second_char = 0
+	move	t4, zero		#third_char = 0
+	move	t5, zero		#fourth_ char = 0
+	li		t6, 64		#int len_encoding_table = 64
 	
 	
 	# for (int i = 0; i < len_encoding_table; i++)
@@ -116,17 +116,54 @@ _compare_first_char:
 	lb	t1, 0(a1)
 	bne	t9, t1, _compare_second_char # if (encoding_table[i] == read[0]) fisrt_char = i
 	lb	t2, t1
-	_compare_first_char:
-	lb	t1, 0(a1)
-	bne	t9, t1, _compare_second_char # if (encoding_table[i] == read[0]) fisrt_char = i
-	lb	t2, t1
+_compare_second_char:
+	lb	t1, 1(a1)
+	bne	t9, t1, _compare_third_char # if (encoding_table[i] == read[1]) second_char = i
+	lb	t3, t1
+_compare_third_char:
+	lb	t1, 2(a1)
+	bne	t9, t1, _compare_third_char # if (encoding_table[i] == read[2]) third_char = i
+	lb	t4, t1
+_compare_fourth_char:
+	lb	t1, 3(a1)
+	bne	t9, t1, _end_comparison # if (encoding_table[i] == read[2]) third_char = i
+	lb	t5, t1
+_end_comparison:
+	addu	t7, t7, 1
+	j	_foor_loop	
 	
+_end_for:
+	sll		t2, t2, 18		# first_char << 18
+	sll		t3, t3, 12		# second_char << 12
+	sll		t4, t4, 6		# third_char << 6
 	
+	move	t6, zero		# Limpio t6 de lo anterior. t6 -> sum
+	or		t6, t6, t2		# sum = sum + first_char
+	or		t6, t6, t3		# sum = sum + second_char
+	or		t6, t6, t4		# sum = sum + third_char
+	or		t6, t6, t5		# sum = sum + fourth_char
 	
-_end_for	
+	sb		t6, 2(a1)		# agrego al ls byte de a1 el ls byte de t6
+	srl		t6, t6, 8		# t6 >> 8
+	sb		t6, 1(a1)		# agrego al byte del medio de a1 el ls byte de t6
+	srl		t6, t6, 8		# t6 >> 8
+	sb		t6, 0(a1)		# agrego al ms byte de a1 el ls byte de t6
+	lb		t0, 0(a2)		# Seteo la longitud a escribir
+	lb		a0, 44($fp)		# Recupero el parametro del file descriptor de salida
+	li		v0, SYS_write
+	syscall
 	
+	bne	a3, zero, error # Chequeo si la syscall se ejecuto bien
 	
-	
+	# Volvemos al sistema operativo, devolviendo un código 
+	# de retorno nulo.
+	#
+	move	v0, zero
+	lw		ra,  28(sp)
+	lw		$fp, 24(sp)
+	addu	sp, sp, 32
+	j		ra
+		
 	.end	base64_decode_s
 
 	.rdata
@@ -137,5 +174,7 @@ encoding_table:
 	100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 
 	112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 
 	50, 51, 52, 53, 54, 55, 56, 57, 43, 47
+	.size encoding_table, 64
 padding: 	
 	.byte	61
+	.size padding, 1
