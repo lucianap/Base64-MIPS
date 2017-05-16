@@ -62,9 +62,9 @@ li	t0, 10
 subu	t1, v0, 1
 la	t3, 24($fp)
 addu	t1, t1, t3
-lb	t2, t1
+lb	t2, 0(t1)
 bne	t0, t2, next_step_3
-sb	zero, t1
+sb	zero, 0(t1)
 subu	v0, v0, 1
 sw	v0, 32($fp)
 
@@ -88,29 +88,29 @@ la	t5, enconding_table
 
 // Save first_coded
 addu	t1, t1, t5
-lbu	t6, t1
+lbu	t6, 0(t1)
 sb	t6, 28($fp)
 
 // Save second_coded
 addu	t2, t2, t5
-lbu	t6, t2
+lbu	t6, 0(t2)
 sb	t6, 29($fp)
 
 // Save third_coded
 addu	t3, t3, t5
-lbu	t6, t3
+lbu	t6, 0(t3)
 sb	t6, 30($fp)
 
 // Save fourth_coded
 addu	t4, t4, t5
-lbu	t6, t4
+lbu	t6, 0(t4)
 sb	t6, 31($fp)
 
 // Padding 1 byte leido
 li 	t0, 1
 bne 	v0, t0, next_step_4
 la	t6, padding
-lbu	t6, t6
+lbu	t6, 0(t6)
 sb	t6, 30($fp)
 sb	t6, 31($fp)
 
@@ -202,11 +202,11 @@ base64_decode_s:
 	li			t0, 3							# int output_length = 3
 	lbu			t1, 3(a1)						#t1 = el cuarto byte de lo que lei
 	la			t9, padding
-	bne			t1, 0(t9), _desencodear
+	bne			t1, t9, _desencodear
 	subu		t0, 1								
 #output_length -= 1
 	lbu			t1, 2(a1)						#t1 = el tercer byte de lo que lei
-	bne			t1, 0(t9), _desencodear
+	bne			t1, t9, _desencodear
 	subu		t0, 1							#output_length -= 1
 _desencodear:
 	move		t2, zero 		#first_char = 0
@@ -304,10 +304,10 @@ _error_bad_encoding:
 	.rdata
 	.align 2
 encoding_table: 
-	.byte 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 
-	79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 
-	100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 
-	112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 
+	.byte 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, \
+	79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, \
+	100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, \
+	112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, \ 
 	50, 51, 52, 53, 54, 55, 56, 57, 43, 47
 	.size encoding_table, 64
 padding: 	
